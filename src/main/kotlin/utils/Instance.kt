@@ -1,8 +1,9 @@
+package utils
+
 import java.io.File
-import java.io.IOException
 
 
-object InstanceUtil {
+object Instance {
 
     fun randomName() = (1..8).map { ('a'..'z').random() }.joinToString("")
 
@@ -48,7 +49,7 @@ object InstanceUtil {
             baseCmd
         }
 
-        return run(cmd, maybeServiceAccount)
+        return Runner.run(cmd, maybeServiceAccount)
     }
 
     fun delete(info: Info, maybeServiceAccount: String?): Result<String> {
@@ -60,7 +61,7 @@ object InstanceUtil {
                   --project=${info.project}
                   """
 
-        return run(cmd, maybeServiceAccount)
+        return Runner.run(cmd, maybeServiceAccount)
     }
 
     fun describe(info: Info, maybeServiceAccount: String?): Result<String> {
@@ -71,7 +72,7 @@ object InstanceUtil {
                   --project=${info.project}
                   """
 
-        return run(cmd, maybeServiceAccount)
+        return Runner.run(cmd, maybeServiceAccount)
     }
 
     fun update(info: Info, maybeServiceAccount: String?): Result<String> {
@@ -83,7 +84,7 @@ object InstanceUtil {
                   --project=${info.project}
                   """
 
-        return run(cmd, maybeServiceAccount)
+        return Runner.run(cmd, maybeServiceAccount)
     }
 
     fun start(info: Info, maybeServiceAccount: String?): Result<String> {
@@ -94,58 +95,6 @@ object InstanceUtil {
                  --project=${info.project}
                  """
 
-        return run(cmd, maybeServiceAccount)
+        return Runner.run(cmd, maybeServiceAccount)
     }
-
-    fun run(cmd: String, maybeServiceAccount: String?): Result<String> {
-
-        val cmdWithQuiet = cmd.trimIndent().replace("\n".toRegex(), " ").split("\\s".toRegex()).filter { it.isNotEmpty() } + "-q"
-
-        val cmdWithMaybeServiceAccount = if (maybeServiceAccount != null) {
-            cmdWithQuiet + "--impersonate-service-account=$maybeServiceAccount"
-        } else {
-            cmdWithQuiet
-        }
-
-        return try {
-            val proc = ProcessBuilder(cmdWithMaybeServiceAccount)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.PIPE)
-                .start()
-
-            proc.waitFor()
-
-            val output = (proc.errorStream.bufferedReader().readText() + proc.inputStream.bufferedReader().readText()).trimEnd()
-
-            if (proc.exitValue() == 0) {
-                Result.success(output)
-            } else {
-                Result.failure(ProcessFailed(cmdWithMaybeServiceAccount, output))
-            }
-        } catch (e: IOException) {
-            Result.failure(ProcessFailed(cmdWithMaybeServiceAccount, e))
-        }
-    }
-
-    class ProcessFailed : RuntimeException {
-        constructor(cmd: List<String>, ex: Exception) : super(
-            """
-                |
-                |Tried to run:
-                |${cmd.joinToString(" ")}
-            """.trimMargin(), ex
-        )
-
-        constructor(cmd: List<String>, out: String) : super(
-            """
-                |
-                |Tried to run:
-                |${cmd.joinToString(" ")}
-                |
-                |Resulted in:
-                |$out
-            """.trimMargin()
-        )
-    }
-
 }

@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     application
     kotlin("jvm") version "1.4.21"
+    kotlin("plugin.serialization") version "1.4.21"
 }
 
 repositories {
@@ -12,6 +13,8 @@ repositories {
 
 dependencies {
     implementation("org.beryx:text-io:3.4.1")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 
     testImplementation("io.kotest:kotest-runner-junit5:4.3.2")
     testImplementation("io.kotest:kotest-assertions-core:4.3.2")
