@@ -3,15 +3,21 @@ package utils
 import io.kotest.assertions.fail
 import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.WordSpec
-import io.kotest.matchers.*
-import io.kotest.matchers.string.*
+import io.kotest.matchers.or
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.include
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldInclude
+import io.kotest.matchers.string.shouldNotBeBlank
+import utils.Compute.Instance
 import java.io.File
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 import kotlin.time.seconds
 
 @ExperimentalTime
-class InstanceSpec : WordSpec({
+class ComputeInstanceSpec : WordSpec({
 
     val projectId = System.getenv("PROJECT_ID") ?: fail("Must set PROJECT_ID env var")
 
@@ -19,7 +25,7 @@ class InstanceSpec : WordSpec({
 
     val name = Instance.randomName()
 
-    val instanceInfo = Instance.Info(projectId, "us-central1-a", "n1-standard-1", "docker.io/hello-world", name)
+    val instanceInfo = Instance(projectId, "us-central1-a", "n1-standard-1", "docker.io/hello-world", name)
 
     "instance name" should {
         "not start with a number" {
@@ -62,7 +68,7 @@ class InstanceSpec : WordSpec({
     "the shutdown script" should {
         "shutdown an instance after the docker process stops" {
             val tmpName = Instance.randomName()
-            val tmpInstanceInfo = Instance.Info(projectId, "us-central1-a", "n1-standard-1", "docker.io/hello-world", tmpName)
+            val tmpInstanceInfo = Instance(projectId, "us-central1-a", "n1-standard-1", "docker.io/hello-world", tmpName)
 
             val script = javaClass.classLoader.getResource("scripts/shutdown-on-docker-exit.sh")?.toURI() ?: fail("Could not find scripts/shutdown-on-docker-exit.sh")
 

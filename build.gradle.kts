@@ -16,6 +16,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 
+    runtimeOnly("org.slf4j:slf4j-simple:1.8.0-beta4")
+
     testImplementation("io.kotest:kotest-runner-junit5:4.3.2")
     testImplementation("io.kotest:kotest-assertions-core:4.3.2")
 }
@@ -30,7 +32,12 @@ tasks.compileKotlin {
 }
 
 application {
-    //mainClass.set("WebAppKt")
+    mainClass.set("cli.MainKt")
+}
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+    systemProperty("org.beryx.textio.TextTerminal", "org.beryx.textio.system.SystemTextTerminal")
 }
 
 tasks.withType<Test> {

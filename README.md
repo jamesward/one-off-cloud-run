@@ -1,8 +1,15 @@
 One-Off Cloud Run
 -----------------
 
+Easily run one-off / admin tasks for Cloud Run services.
 
-# Test
+# Usage
+
+TODO
+
+# Dev Info
+
+## Test
 
 1. If needed, login to `gcloud`
 1. `gcloud services enable compute.googleapis.com`
@@ -26,12 +33,26 @@ One-Off Cloud Run
        
        gcloud projects add-iam-policy-binding $PROJECT_ID \
        --member=serviceAccount:$SERVICE_ACCOUNT \
+       --role=roles/compute.zones.list
+       
+       gcloud projects add-iam-policy-binding $PROJECT_ID \
+       --member=serviceAccount:$SERVICE_ACCOUNT \
        --role=roles/iam.serviceAccountUser
        ```
 
-1. `./gradlew test`
+1. Run the tests: `./gradlew test`
 
-# TODO
-- Env Vars
+1. Continuously run a specific test: `./gradlew -t test  --tests 'CloudRunSpec'`
+
+1. Run the CLI via Gradle: `./gradlew run -q --console=plain`
+
+1. Run an "installed" app:
+    ```
+    ./gradlew installDist
+    build/install/one-off-cloud-run/bin/one-off-cloud-run
+    ```
+
+## TODO
+- MockTextTerminal for CLI Test
 - Cloud SQL
 - VPC

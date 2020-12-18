@@ -19,14 +19,11 @@ object Runner {
         }
 
         return try {
-            val proc = ProcessBuilder(cmdWithMaybeServiceAccount)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.PIPE)
-                .start()
-
-            proc.waitFor()
+            val proc = ProcessBuilder(cmdWithMaybeServiceAccount).start()
 
             val output = success(proc)
+
+            proc.waitFor()
 
             if (proc.exitValue() == 0) {
                 Result.success(output)
@@ -49,8 +46,10 @@ object Runner {
         }
     }
 
+    // todo: maybe json parsing functor?
     fun json(cmd: String, maybeServiceAccount: String?): Result<String> {
-        return runRaw(cmd, maybeServiceAccount, { it.inputStream.bufferedReader().readText().trim() }, { it.errorStream.bufferedReader().readText().trimEnd() })
+        val cmdWithJson = "$cmd --format=json"
+        return runRaw(cmdWithJson, maybeServiceAccount, { it.inputStream.bufferedReader().readText().trim() }, { it.errorStream.bufferedReader().readText().trimEnd() })
     }
 
     class ProcessFailed : RuntimeException {
