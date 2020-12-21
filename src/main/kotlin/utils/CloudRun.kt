@@ -6,7 +6,7 @@ import kotlinx.serialization.json.Json
 
 object CloudRun {
 
-    fun regions(projectId: String, maybeServiceAccount: String?): Result<Set<Region>> {
+    fun regions(projectId: String, maybeServiceAccount: String? = null): Result<Set<Region>> {
         val cmd = """
                   gcloud run regions list --project=$projectId --platform=managed
                   """
@@ -16,7 +16,7 @@ object CloudRun {
         }
     }
 
-    fun services(projectId: String, regionId: String, maybeServiceAccount: String?): Result<Set<Service>> {
+    fun services(projectId: String, regionId: String, maybeServiceAccount: String? = null): Result<Set<Service>> {
         val cmd = """
                   gcloud run services list --project=$projectId --region=$regionId --platform=managed
                   """
