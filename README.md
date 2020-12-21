@@ -6,7 +6,7 @@ Easily run one-off / admin tasks for Cloud Run services.
 # Usage
 
 Run one-off / admin processes for Cloud Run services.  Just click:  
-[![One-Off Cloud Run](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/?cloudshell_image=us-docker.pkg.dev/jamesward/tools/one-off-cloud-run&shellonly=true)
+[![One-Off Cloud Run](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/?cloudshell_image=gcr.io/jamesward/one-off-cloud-run&shellonly=true)
 
 
 ## Dev Info
