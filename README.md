@@ -5,9 +5,8 @@ Easily run one-off / admin tasks for Cloud Run services.
 
 # Usage
 
-Run one-off / admin processes for Cloud Run services.
-
-
+Run one-off / admin processes for Cloud Run services.  Just click:  
+[![One-Off Cloud Run](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/?cloudshell_image=us-docker.pkg.dev/jamesward/tools/one-off-cloud-run&shellonly=true)
 
 
 ## Dev Info
@@ -80,7 +79,31 @@ Run one-off / admin processes for Cloud Run services.
     build/install/one-off-cloud-run/bin/one-off-cloud-run
     ```
 
+### Test Cloud Shell Image
+
+1. Build the container:
+   ```
+   docker build -t one-off-cloud-run .
+   ```
+
+1. Set an env var pointing to the Service Account's JSON file:
+
+    ```
+    export KEY_FILE=PATH_TO_YOUR_SERVICE_ACCOUNT_KEY_FILE
+    ```
+
+1. Run via Docker:
+    ```
+    docker run -it -v /var/run/docker.sock:/var/run/docker.sock \
+      -v $KEY_FILE:/root/user.json \
+      -e GOOGLE_APPLICATION_CREDENTIALS=/root/user.json \
+      -e TRUSTED_ENVIRONMENT=true \
+      --entrypoint=/bin/sh one-off-cloud-run -c \
+      "gcloud auth activate-service-account --key-file=/root/user.json -q && /bin/cloudshell_open"
+    ```
+
 ## TODO
+- Better machinetype selector
 - MockTextTerminal for CLI Test
 - Cloud SQL
 - VPC

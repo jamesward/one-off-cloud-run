@@ -122,6 +122,7 @@ class ComputeInstanceSpec : WordSpec({
     }
 
     afterSpec { _ ->
+        // todo: run in parallel
         runBlocking {
             listOf(instanceInfo1, instanceInfo2, instanceInfo3, instanceInfo4, instanceInfo5).map {
                 async {

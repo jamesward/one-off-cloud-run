@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-docker.pkg.dev/$PROJECT_ID/tools/one-off-cloud-run', '.']
+
+  - name: 'gcr.io/cloudshell-images/custom-image-validation'
+    args: ['image_test.py', '--image', 'us-docker.pkg.dev/$PROJECT_ID/tools/one-off-cloud-run']
+
+images: ['us-docker.pkg.dev/$PROJECT_ID/tools/one-off-cloud-run']
+timeout: '3600s'
+options:
+  machineType: 'N1_HIGHCPU_8'

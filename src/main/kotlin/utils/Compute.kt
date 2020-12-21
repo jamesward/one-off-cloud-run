@@ -94,6 +94,7 @@ object Compute {
                 }
             }
 
+            // todo: update all params
             fun update(instance: Instance, maybeServiceAccount: String? = null): Result<String> {
                 val cmd = """
                   gcloud compute instances update-container
