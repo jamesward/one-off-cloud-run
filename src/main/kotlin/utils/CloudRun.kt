@@ -3,6 +3,7 @@ package utils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.SerialName
 
 object CloudRun {
 
@@ -26,15 +27,25 @@ object CloudRun {
         }
     }
 
+    fun revision(projectId: String, regionId: String, revisionName: String, maybeServiceAccount: String?): Result<Revision> {
+        val cmd = """
+                  gcloud run revisions describe --project=$projectId --region=$regionId --platform=managed $revisionName
+                  """
+
+        return Runner.json(cmd, maybeServiceAccount).map { s ->
+            Json { ignoreUnknownKeys = true }.decodeFromString(Revision.serializer(), s)
+        }
+    }
+
 
     @Serializable
     data class Region(val displayName: String, val locationId: String)
 
     @Serializable
-    data class Service(val metadata: Metadata, val spec: Spec)
+    data class Service(val metadata: ServiceMetadata, val spec: Spec, val status: Status)
 
     @Serializable
-    data class Metadata(val name: String)
+    data class ServiceMetadata(val name: String)
 
     @Serializable
     data class Spec(val template: Template)
@@ -54,5 +65,24 @@ object CloudRun {
 
     @Serializable
     data class Env(val name: String, val value: String)
+
+    @Serializable
+    data class Status(val traffic: List<Traffic>) {
+        val latest: Traffic? by lazy {
+            traffic.find { it.latestRevision }
+        }
+    }
+
+    @Serializable
+    data class Traffic(val latestRevision: Boolean, val revisionName: String)
+
+    @Serializable
+    data class Revision(val metadata: RevisionMetadata)
+
+    @Serializable
+    data class RevisionMetadata(val annotations: RevisionAnnotations)
+
+    @Serializable
+    data class RevisionAnnotations(@SerialName("run.googleapis.com/cloudsql-instances") val cloudSqlInstances: String? = null)
 
 }

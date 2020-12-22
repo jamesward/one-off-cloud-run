@@ -14,25 +14,45 @@ Run one-off / admin processes for Cloud Run services.  Just click:
 ### Test
 
 1. `export PROJECT_ID=YOUR_PROJECT_ID`
+1. `export REGION_ID=us-central1`
+
 1. If needed, login to `gcloud`
-1. `gcloud services enable compute.googleapis.com`
+
+1. Enable apis:
+    ```
+    gcloud services enable compute.googleapis.com --project=$PROJECT_ID
+    gcloud services enable sqladmin.googleapis.com --project=$PROJECT_ID
+    gcloud services enable run.googleapis.com --project=$PROJECT_ID
+    ```
+
 1. Build test container:
     ```
     docker build -t gcr.io/$PROJECT_ID/one-off-cloud-run-test test-container
     docker push gcr.io/$PROJECT_ID/one-off-cloud-run-test
     ```
+
+1. Create a Cloud SQL instance:
+    ```
+    export DB_PASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+    export DB_INSTANCE=one-off-cloud-run-test
+
+    gcloud sql instances create $DB_INSTANCE --database-version=POSTGRES_9_6 --tier=db-f1-micro --region=$REGION_ID --project=$PROJECT_ID --root-password=$DB_PASS
+    ```
+
 1. Deploy a test Cloud Run service:
     ```
     gcloud run deploy \
         --project=$PROJECT_ID \
-        --region=us-central1 \
+        --region=$REGION_ID \
         --platform=managed \
         --allow-unauthenticated \
         --image=gcr.io/$PROJECT_ID/one-off-cloud-run-test \
-        --set-env-vars=NAME=world \
+        --set-env-vars=NAME=world,DB_PASS=$DB_PASS,CLOUD_SQL_CONNECTION_NAME=PROJECT_ID:$REGION_ID:DB_INSTANCE \
+        --add-cloudsql-instances=$DB_INSTANCE \
         one-off-cloud-run-test
     ```
-1. (optional) Create a service account:
+
+1. (optional) Create a service account to run tests with:
     1. ```
        export SANAME=one-off-cloud-run
        ```
@@ -65,6 +85,10 @@ Run one-off / admin processes for Cloud Run services.  Just click:
        gcloud projects add-iam-policy-binding $PROJECT_ID \
            --member=serviceAccount:$SERVICE_ACCOUNT \
            --role=roles/serviceusage.serviceUsageConsumer
+
+       gcloud projects add-iam-policy-binding $PROJECT_ID \
+           --member=serviceAccount:$SERVICE_ACCOUNT \
+           --role=roles/cloudsql.client
        ```
 
 1. Run the tests: `./gradlew test`
@@ -106,3 +130,4 @@ Run one-off / admin processes for Cloud Run services.  Just click:
 - MockTextTerminal for CLI Test
 - Cloud SQL
 - VPC
+- CI/CD Tests
