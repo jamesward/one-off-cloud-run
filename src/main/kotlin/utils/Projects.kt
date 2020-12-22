@@ -20,6 +20,6 @@ object Projects {
 
 
     @Serializable
-    data class Project(val name: String, val lifecycleState: String, val projectId: String)
+    data class Project(val name: String? = null, val lifecycleState: String, val projectId: String)
 
 }
