@@ -103,7 +103,6 @@ Run one-off / admin processes for Cloud Run services.  Just click:
     ```
 
 ## TODO
-- Better machinetype selector
 - MockTextTerminal for CLI Test
 - Cloud SQL
 - VPC

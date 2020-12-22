@@ -176,5 +176,38 @@ object Compute {
     data class Zone(val name: String)
 
     @Serializable
-    data class MachineType(val name: String)
+    data class MachineType(val name: String) {
+        val parts by lazy { name.split("-") }
+
+        val family by lazy { parts[0] }
+        val classification by lazy { parts[1] }
+        val mem by lazy { parts.getOrNull(2) }
+
+        companion object {
+            fun classificationPriority(classification: String): Int {
+                return when(classification) {
+                    "micro" -> 0
+                    "small" -> 1
+                    "medium" -> 2
+                    "standard" -> 3
+                    "highcpu" -> 4
+                    "highgpu" -> 5
+                    "highmem" -> 6
+                    "ultracpu" -> 7
+                    "ultagpu" -> 8
+                    "ultamem" -> 9
+                    "megacpu" -> 10
+                    "megagpu" -> 11
+                    "megamem" -> 12
+                    else -> 100
+                }
+            }
+
+            fun memPriority(mem: String?): Int {
+                return mem?.replace("[^0-9]".toRegex(), "")?.toInt() ?: -1
+            }
+
+            val comparator = compareBy<MachineType> { classificationPriority(it.classification) }.thenBy { memPriority(it.mem) }
+        }
+    }
 }

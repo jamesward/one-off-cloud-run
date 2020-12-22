@@ -77,8 +77,14 @@ fun main() {
 
     val machineTypes = Compute.machineTypes(projectId, zone).getOrError()
 
+    val machineFamilies = machineTypes.map { it.family }.distinct()
+
+    val machineFamily = textIO.newStringInputReader()
+        .withNumberedPossibleValues(machineFamilies)
+        .read("Machine Family")
+
     val machineType = textIO.newStringInputReader()
-        .withNumberedPossibleValues(machineTypes.map { it.name })
+        .withNumberedPossibleValues(machineTypes.filter { it.family == machineFamily }.sortedWith(Compute.MachineType.comparator).map { it.name })
         .read("Machine Type")
 
     val entrypointString = textIO.newStringInputReader()
