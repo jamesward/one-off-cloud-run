@@ -1,13 +1,20 @@
 package utils
 
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.time.ExperimentalTime
 
 
 object Compute {
 
+    @FlowPreview
+    @ExperimentalSerializationApi
+    @ExperimentalTime
     data class Instance(
         val project: String,
         val zone: String,
@@ -32,6 +39,9 @@ object Compute {
             }?.replace("[^0-9a-zA-Z]".toRegex(), "-")?.replace("--", "-")?.toLowerCase() ?: randomName()
         }
 
+        @ExperimentalSerializationApi
+        @FlowPreview
+        @ExperimentalTime
         companion object {
             fun randomName() = (1..8).map { ('a'..'z').random() }.joinToString("")
 
@@ -150,22 +160,14 @@ object Compute {
                 return Runner.run(cmd, maybeServiceAccount)
             }
 
-            fun logs(instance: Instance, limit: Int?, maybeServiceAccount: String?): Result<List<LogEntry>> {
-                return describe(instance, maybeServiceAccount).flatMap { instanceDescription ->
+            // just for tests
+            fun logs(instance: Instance, limit: Int?, accessToken: String, maybeServiceAccount: String?): Result<List<Logging.LogEntry>> {
+                return describe(instance, maybeServiceAccount).map { instanceDescription ->
                     val filter = "resource.type=gce_instance AND logName=projects/${instance.project}/logs/cos_containers AND resource.labels.instance_id=${instanceDescription.id}"
 
-                    val cmd1 = listOf(
-                        "gcloud",
-                        "logging",
-                        "read",
-                        "--project=${instance.project}",
-                        filter
-                    )
-
-                    val cmd2 = if (limit != null) cmd1 + "--limit=$limit" else cmd1
-
-                    Runner.json(cmd2, maybeServiceAccount).map { s ->
-                        Json { ignoreUnknownKeys = true }.decodeFromString(ListSerializer(LogEntry.serializer()), s)
+                    // todo: coroutine to Result
+                    runBlocking {
+                        Logging.logs(listOf("projects/${instance.project}"), filter, limit, accessToken)
                     }
                 }
             }
@@ -176,12 +178,6 @@ object Compute {
 
         @Serializable
         data class ServiceAccount(val email: String)
-
-        @Serializable
-        data class LogEntry(val jsonPayload: JsonPayload)
-
-        @Serializable
-        data class JsonPayload(val message: String)
     }
 
     fun zones(projectId: String, region: String, maybeServiceAccount: String? = null): Result<Set<Zone>> {

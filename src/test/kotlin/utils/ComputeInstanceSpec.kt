@@ -11,14 +11,18 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldInclude
 import io.kotest.matchers.string.shouldNotBeBlank
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
 import utils.Compute.Instance
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 import kotlin.time.seconds
 
 // todo: afterTest Instance.delete
+@ExperimentalSerializationApi
+@FlowPreview
 @ExperimentalTime
 class ComputeInstanceSpec : WordSpec({
 
@@ -30,6 +34,8 @@ class ComputeInstanceSpec : WordSpec({
     val dbInstance = System.getenv("DB_INSTANCE") ?: fail("Most set DB_INSTANCE env var")
 
     val maybeServiceAccount = System.getenv("SERVICE_ACCOUNT")
+
+    val accessToken = Auth.accessTokenFromGcloud(maybeServiceAccount)
 
     val name = Instance.randomName()
 
@@ -120,7 +126,7 @@ class ComputeInstanceSpec : WordSpec({
             operation.getOrThrow() shouldEndWith "RUNNING"
 
             eventually(2.minutes, 15.seconds) {
-                Instance.logs(instance4, 500, maybeServiceAccount).getOrThrow() shouldExist { it.jsonPayload.message.contains("hello, world") }
+                Instance.logs(instance4, 500, accessToken, maybeServiceAccount).getOrThrow() shouldExist { it.jsonPayload?.message?.contains("hello, world") ?: false }
             }
         }
 
@@ -141,12 +147,12 @@ class ComputeInstanceSpec : WordSpec({
             operation.getOrThrow() shouldEndWith "RUNNING"
 
             eventually(2.minutes, 15.seconds) {
-                Instance.logs(instance6, 500, maybeServiceAccount).getOrThrow() shouldExist { it.jsonPayload.message.contains("(1 row)") }
+                Instance.logs(instance6, 500, accessToken, maybeServiceAccount).getOrThrow() shouldExist { it.jsonPayload?.message?.contains("(1 row)") ?: false }
             }
         }
     }
 
-    afterSpec { _ ->
+    afterSpec {
         // todo: run in parallel
         runBlocking {
             fun delete(instance: Instance) = async {

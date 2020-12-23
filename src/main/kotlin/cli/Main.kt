@@ -1,12 +1,18 @@
 package cli
 
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.beryx.textio.TextIoFactory
-import utils.CloudRun
-import utils.Compute
-import utils.Projects
-import utils.flatMap
+import utils.*
+import java.time.Instant
+import kotlin.time.ExperimentalTime
 
 
+@ExperimentalSerializationApi
+@FlowPreview
+@ExperimentalTime
 fun main() {
 
     val textIO = TextIoFactory.getTextIO()
@@ -103,7 +109,7 @@ fun main() {
     fun askForArg(allArgs: List<String>): List<String> {
         val arg = textIO.newStringInputReader()
             .withMinLength(0)
-            .read("Container arg (leave blank for continue)")
+            .read("Container arg (leave blank to continue)")
 
         return if (arg.isNullOrEmpty()) {
             allArgs
@@ -114,7 +120,9 @@ fun main() {
 
     val argsList = askForArg(emptyList())
 
-    terminal.println("Starting job")
+    terminal.println("Starting Instance")
+
+    val start = Instant.now()
 
     // todo: numbered jobs?
     val instance = Compute.Instance(
@@ -141,8 +149,27 @@ fun main() {
         }
     }
 
-    terminal.println(createOrStart.toString())
+    createOrStart.fold({
+        terminal.println("Instance Started.  Logs:")
 
-    // todo: display logs
+        val runningInstance = Compute.Instance.describe(instance).getOrThrow()
+
+        runBlocking {
+            val accessToken = Auth.accessToken()
+            val filter = "resource.type=gce_instance AND logName=projects/${instance.project}/logs/cos_containers AND resource.labels.instance_id=${runningInstance.id}"
+            Logging.logStream(listOf("projects/$projectId"), start, filter, accessToken) {
+                Compute.Instance.describe(instance).getOrNull()?.status == "RUNNING"
+            }.collect {
+                it.jsonPayload?.message?.let { msg ->
+                    terminal.print(msg)
+                }
+            }
+            terminal.println("Process Ended")
+        }
+    }, {
+        terminal.println("Could not start instance: ${it.message}")
+        terminal.abort()
+        throw Exception()
+    })
 
 }

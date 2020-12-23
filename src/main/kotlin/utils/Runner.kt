@@ -2,15 +2,6 @@ package utils
 
 import java.io.IOException
 
-fun <I, O> Result<I>.flatMap(f: (I) -> Result<O>): Result<O> {
-    return try {
-        val i = this.getOrThrow()
-        f(i)
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-}
-
 object Runner {
 
     fun cmdSplit(cmd: String): List<String> {

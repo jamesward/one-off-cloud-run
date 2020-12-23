@@ -14,7 +14,12 @@ repositories {
 dependencies {
     implementation("org.beryx:text-io:3.4.1")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
+    implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2")
+    implementation("io.ktor:ktor-client-cio:1.5.0")
+    implementation("io.ktor:ktor-client-serialization-jvm:1.5.0")
+    implementation("io.ktor:ktor-client-logging-jvm:1.5.0")
 
     runtimeOnly("org.slf4j:slf4j-simple:1.8.0-beta4")
 

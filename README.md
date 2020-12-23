@@ -81,6 +81,10 @@ Run one-off / admin processes for Cloud Run services.  Just click:
            --member=serviceAccount:$SERVICE_ACCOUNT \
            --role=roles/logging.viewer
 
+       gcloud projects add-iam-policy-binding $PROJECT_ID \
+           --member=serviceAccount:$SERVICE_ACCOUNT \
+           --role=roles/logging.logWriter
+
        # for logging read
        gcloud projects add-iam-policy-binding $PROJECT_ID \
            --member=serviceAccount:$SERVICE_ACCOUNT \
@@ -127,7 +131,7 @@ Run one-off / admin processes for Cloud Run services.  Just click:
     ```
 
 ## TODO
+- Quiet fluentd logs
 - MockTextTerminal for CLI Test
-- Cloud SQL
 - VPC
 - CI/CD Tests
