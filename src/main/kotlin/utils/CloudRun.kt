@@ -72,7 +72,7 @@ object CloudRun {
     }
 
     @Serializable
-    data class Traffic(val latestRevision: Boolean, val revisionName: String)
+    data class Traffic(val latestRevision: Boolean = false, val revisionName: String)
 
     @Serializable
     data class Revision(val metadata: RevisionMetadata)
