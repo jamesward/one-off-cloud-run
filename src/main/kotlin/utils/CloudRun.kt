@@ -67,7 +67,7 @@ object CloudRun {
     data class Env(val name: String, val value: String)
 
     @Serializable
-    data class Status(val traffic: List<Traffic>) {
+    data class Status(val traffic: List<Traffic> = emptyList()) {
         val latest: Traffic? = traffic.find { it.latestRevision }
     }
 
