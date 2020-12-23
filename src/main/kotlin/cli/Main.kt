@@ -5,7 +5,6 @@ import utils.CloudRun
 import utils.Compute
 import utils.Projects
 import utils.flatMap
-import java.io.File
 
 
 fun main() {
@@ -69,6 +68,14 @@ fun main() {
         services.find { it.metadata.name == serviceName }!!
     }
 
+    val latestRevision = if (service.status.latest == null) {
+        terminal.println("No Cloud Run revisions found")
+        terminal.abort()
+        throw Exception()
+    } else {
+        CloudRun.revision(projectId, regionId, service.status.latest.revisionName)
+    }
+
     val zones = Compute.zones(projectId, regionId).getOrError()
 
     val zone = textIO.newStringInputReader()
@@ -93,11 +100,19 @@ fun main() {
 
     val entrypoint = if (entrypointString.isNullOrEmpty()) null else entrypointString
 
-    val args = textIO.newStringInputReader()
-        .withMinLength(0)
-        .read("Container args (leave blank for none)")
+    fun askForArg(allArgs: List<String>): List<String> {
+        val arg = textIO.newStringInputReader()
+            .withMinLength(0)
+            .read("Container arg (leave blank for continue)")
 
-    val argsList = args.split("\\s".toRegex()).filter { it.isNotEmpty() }
+        return if (arg.isNullOrEmpty()) {
+            allArgs
+        } else {
+            askForArg(allArgs + arg)
+        }
+    }
+
+    val argsList = askForArg(emptyList())
 
     terminal.println("Starting job")
 
@@ -111,36 +126,23 @@ fun main() {
         entrypoint,
         argsList,
         service.spec.template.spec.containers.first().envMap,
+        true,
+        latestRevision.getOrNull()?.metadata?.annotations?.cloudSqlInstances,
         service.spec.template.spec.serviceAccountName)
 
-    val startupfileResource = {}::class.java.classLoader.getResource("scripts/shutdown-on-docker-exit.sh")?.toURI()
+    val describe = Compute.Instance.describe(instance)
 
-    if (startupfileResource != null) {
-        val startupfile = if (startupfileResource.scheme == "jar") {
-            startupfileResource.toURL().openStream().use { input ->
-                val f = File("/tmp/shutdown-on-docker-exit.sh")
-                if (f.exists()) {
-                    f.delete()
-                }
-                f.outputStream().use { input.copyTo(it) }
-                f.setExecutable(true)
-                f.toURI()
-            }
-        } else {
-            startupfileResource
-        }
-
-        val describe = Compute.Instance.describe(instance)
-        if (describe.isFailure) {
-            Compute.Instance.create(instance, File(startupfile))
-        } else {
-            // todo: instance is running
-            Compute.Instance.update(instance).flatMap {
-                Compute.Instance.start(instance)
-            }
-        }
+    val createOrStart = if (describe.isFailure) {
+        Compute.Instance.create(instance)
     } else {
-        terminal.println("Could not find shutdown script")
-        terminal.abort()
+        // todo: instance is running
+        Compute.Instance.update(instance).flatMap {
+            Compute.Instance.start(instance)
+        }
     }
+
+    terminal.println(createOrStart.toString())
+
+    // todo: display logs
+
 }

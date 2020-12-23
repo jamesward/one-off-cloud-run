@@ -1,6 +1,5 @@
 package utils
 
-import kotlin.Result
 import java.io.IOException
 
 fun <I, O> Result<I>.flatMap(f: (I) -> Result<O>): Result<O> {

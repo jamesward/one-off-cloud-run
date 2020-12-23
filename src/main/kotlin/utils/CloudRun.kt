@@ -1,9 +1,9 @@
 package utils
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.SerialName
 
 object CloudRun {
 
@@ -27,7 +27,7 @@ object CloudRun {
         }
     }
 
-    fun revision(projectId: String, regionId: String, revisionName: String, maybeServiceAccount: String?): Result<Revision> {
+    fun revision(projectId: String, regionId: String, revisionName: String, maybeServiceAccount: String? = null): Result<Revision> {
         val cmd = """
                   gcloud run revisions describe --project=$projectId --region=$regionId --platform=managed $revisionName
                   """
@@ -68,9 +68,7 @@ object CloudRun {
 
     @Serializable
     data class Status(val traffic: List<Traffic>) {
-        val latest: Traffic? by lazy {
-            traffic.find { it.latestRevision }
-        }
+        val latest: Traffic? = traffic.find { it.latestRevision }
     }
 
     @Serializable

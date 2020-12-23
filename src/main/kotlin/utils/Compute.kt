@@ -17,6 +17,8 @@ object Compute {
         val containerEntrypoint: String? = null,
         val containerArgs: List<String> = emptyList(),
         val containerEnvs: Map<String, String> = emptyMap(),
+        val shutdownOnComplete: Boolean = true,
+        val instanceConnectionName: String? = null,
         val serviceAccountName: String? = null) {
 
         val validName by lazy {
@@ -34,39 +36,69 @@ object Compute {
             fun randomName() = (1..8).map { ('a'..'z').random() }.joinToString("")
 
             // todo: to json
-            fun create(instance: Instance, maybeStartupFile: File?, maybeServiceAccount: String? = null): Result<String> {
-                val baseCmd = Runner.cmdSplit("""
-                      gcloud compute instances create-with-container
-                      ${instance.validName}
-                      --container-restart-policy=never
-                      --no-restart-on-failure
-                      --scopes=cloud-platform
-                      --machine-type=${instance.machineType}
-                      --container-image=${instance.containerImage}
-                      --container-stdin
-                      --container-tty
-                      --zone=${instance.zone}
-                      --project=${instance.project}
-                      """)
+            fun create(instance: Instance, maybeServiceAccount: String? = null): Result<String> {
+                val startupScriptResource = this::class.java.classLoader.getResource("scripts/startup-script.sh")?.toURI()
 
-                val addStartupScript = maybeStartupFile?.let { it.exists() && it.isFile } ?: false
-
-                val cmd1 = if (addStartupScript && maybeStartupFile != null) {
-                    baseCmd + "--metadata-from-file=startup-script=${maybeStartupFile.absolutePath}"
+                return if (startupScriptResource == null) {
+                    Result.failure(Exception("Could not find startup-script.sh"))
                 } else {
-                    baseCmd
+                    val startupScript = if (startupScriptResource.scheme == "jar") {
+                        startupScriptResource.toURL().openStream().use { input ->
+                            val f = File("/tmp/startup-script.sh")
+                            if (f.exists()) {
+                                f.delete()
+                            }
+                            f.outputStream().use { input.copyTo(it) }
+                            f.setExecutable(true)
+                            f.toURI()
+                        }
+                    } else {
+                        startupScriptResource
+                    }
+
+                    val startupScriptFile = File(startupScript)
+
+                    if (!startupScriptFile.exists()) {
+                        Result.failure(Exception("Could not find $startupScriptFile"))
+                    } else {
+
+                        val baseCmd = Runner.cmdSplit(
+                            """
+                                gcloud compute instances create-with-container
+                                ${instance.validName}
+                                --container-restart-policy=never
+                                --no-restart-on-failure
+                                --scopes=cloud-platform
+                                --machine-type=${instance.machineType}
+                                --container-image=${instance.containerImage}
+                                --container-stdin
+                                --container-tty
+                                --zone=${instance.zone}
+                                --project=${instance.project}
+                                --metadata-from-file=startup-script=${startupScriptFile.absolutePath}
+                            """
+                        )
+
+                        val envsString = instance.containerEnvs.map {
+                            "${it.key}=${it.value}"
+                        }
+
+                        val meta1 = emptyMap<String, String>()
+                        val meta2 = if (instance.shutdownOnComplete) meta1 + ("POWER_OFF_WHEN_DONE" to "true") else meta1
+                        val meta3 = if (instance.instanceConnectionName != null) meta2 + ("INSTANCE_CONNECTION_NAME" to instance.instanceConnectionName) else meta2
+
+                        val metadataString = meta3.map { "${it.key}=${it.value}" }
+
+                        val cmd1 = if (instance.containerEntrypoint != null) baseCmd + "--container-command=${instance.containerEntrypoint}" else baseCmd
+                        val cmd2 = instance.containerArgs.fold(cmd1) { cmd, arg -> cmd + "--container-arg=$arg" }
+                        val cmd3 = if (envsString.isNotEmpty()) cmd2 + "--container-env=${envsString.joinToString(",")}" else cmd2
+                        val cmd4 = if (instance.serviceAccountName != null) cmd3 + "--service-account=${instance.serviceAccountName}" else cmd3
+                        val cmd5 = if (instance.instanceConnectionName != null) cmd4 + "--container-mount-host-path=host-path=/mnt/stateful_partition/cloudsql,mount-path=/cloudsql" else cmd4
+                        val cmd6 = if (metadataString.isNotEmpty()) cmd5 + "--metadata=${metadataString.joinToString(",")}" else cmd5
+
+                        Runner.run(cmd6, maybeServiceAccount)
+                    }
                 }
-
-                val envsString = instance.containerEnvs.map {
-                    "${it.key}=${it.value}"
-                }
-
-                val cmd2 = if (instance.containerEntrypoint != null) cmd1 + "--container-command=${instance.containerEntrypoint}" else cmd1
-                val cmd3 = instance.containerArgs.fold(cmd2) { cmd, arg -> cmd + "--container-arg=$arg" }
-                val cmd4 = if (envsString.isNotEmpty()) cmd3 + "--container-env=${envsString.joinToString(",")}" else cmd3
-                val cmd5 = if (instance.serviceAccountName != null) cmd4 + "--service-account=${instance.serviceAccountName}" else cmd4
-
-                return Runner.run(cmd5, maybeServiceAccount)
             }
 
             fun delete(instance: Instance, maybeServiceAccount: String? = null): Result<String> {

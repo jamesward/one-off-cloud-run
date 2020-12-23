@@ -47,7 +47,7 @@ Run one-off / admin processes for Cloud Run services.  Just click:
         --platform=managed \
         --allow-unauthenticated \
         --image=gcr.io/$PROJECT_ID/one-off-cloud-run-test \
-        --set-env-vars=NAME=world,DB_PASS=$DB_PASS,CLOUD_SQL_CONNECTION_NAME=PROJECT_ID:$REGION_ID:DB_INSTANCE \
+        --set-env-vars=NAME=world,DB_PASS=$DB_PASS,CLOUD_SQL_CONNECTION_NAME=$PROJECT_ID:$REGION_ID:$DB_INSTANCE \
         --add-cloudsql-instances=$DB_INSTANCE \
         one-off-cloud-run-test
     ```
