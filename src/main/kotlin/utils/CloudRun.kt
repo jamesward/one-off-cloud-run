@@ -81,6 +81,9 @@ object CloudRun {
     data class RevisionMetadata(val annotations: RevisionAnnotations)
 
     @Serializable
-    data class RevisionAnnotations(@SerialName("run.googleapis.com/cloudsql-instances") val cloudSqlInstances: String? = null)
+    data class RevisionAnnotations(
+        @SerialName("run.googleapis.com/cloudsql-instances") val cloudSqlInstances: String? = null,
+        @SerialName("run.googleapis.com/vpc-access-connector") val vpcAccessConnector: String? = null
+    )
 
 }

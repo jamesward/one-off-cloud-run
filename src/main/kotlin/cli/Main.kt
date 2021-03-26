@@ -165,6 +165,7 @@ fun main() {
         userInput.service.spec.template.spec.containers.first().envMap,
         true,
         latestRevision.metadata.annotations.cloudSqlInstances,
+        latestRevision.metadata.annotations.vpcAccessConnector,
         userInput.service.spec.template.spec.serviceAccountName)
 
     val describe = Compute.Instance.describe(instance)

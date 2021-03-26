@@ -26,6 +26,7 @@ object Compute {
         val containerEnvs: Map<String, String> = emptyMap(),
         val shutdownOnComplete: Boolean = true,
         val instanceConnectionName: String? = null,
+        val vpcAccessConnector: String? = null,
         val serviceAccountName: String? = null) {
 
         val validName by lazy {
@@ -99,14 +100,21 @@ object Compute {
 
                         val metadataString = meta3.map { "${it.key}=${it.value}" }
 
+                        val maybeNetwork = instance.vpcAccessConnector?.let { vpcAccessConnector ->
+                            // todo: terrible parsing
+                            val parts = vpcAccessConnector.split('/')
+                            networkVpcAccessConnector(parts[1], parts[3], parts[5])
+                        }?.getOrNull()
+
                         val cmd1 = if (instance.containerEntrypoint != null) baseCmd + "--container-command=${instance.containerEntrypoint}" else baseCmd
                         val cmd2 = instance.containerArgs.fold(cmd1) { cmd, arg -> cmd + "--container-arg=$arg" }
                         val cmd3 = if (envsString.isNotEmpty()) cmd2 + "--container-env=${envsString.joinToString(",")}" else cmd2
                         val cmd4 = if (instance.serviceAccountName != null) cmd3 + "--service-account=${instance.serviceAccountName}" else cmd3
                         val cmd5 = if (instance.instanceConnectionName != null) cmd4 + "--container-mount-host-path=host-path=/mnt/stateful_partition/cloudsql,mount-path=/cloudsql" else cmd4
-                        val cmd6 = if (metadataString.isNotEmpty()) cmd5 + "--metadata=${metadataString.joinToString(",")}" else cmd5
+                        val cmd6 = if (maybeNetwork != null) cmd5 + "--network=${maybeNetwork.network}" else cmd5
+                        val cmd7 = if (metadataString.isNotEmpty()) cmd6 + "--metadata=${metadataString.joinToString(",")}" else cmd5
 
-                        Runner.run(cmd6, maybeServiceAccount)
+                        Runner.run(cmd7, maybeServiceAccount)
                     }
                 }
             }
@@ -200,6 +208,16 @@ object Compute {
         }
     }
 
+    fun networkVpcAccessConnector(projectId: String, region: String, name: String, maybeServiceAccount: String? = null): Result<NetworkVpcAccessConnector> {
+        val cmd = """
+                  gcloud compute networks vpc-access connectors describe $name --project=$projectId --region=$region
+                  """.trimIndent()
+
+        return Runner.json(cmd, maybeServiceAccount).map { s ->
+            Json { ignoreUnknownKeys = true }.decodeFromString(NetworkVpcAccessConnector.serializer(), s)
+        }
+    }
+
     @Serializable
     data class Zone(val name: String)
 
@@ -238,4 +256,7 @@ object Compute {
             val comparator = compareBy<MachineType> { classificationPriority(it.classification) }.thenBy { memPriority(it.mem) }
         }
     }
+
+    @Serializable
+    data class NetworkVpcAccessConnector(val network: String)
 }

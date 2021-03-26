@@ -158,5 +158,4 @@ docker run --rm \
 ## TODO
 - Quiet fluentd logs
 - MockTextTerminal for CLI Test
-- VPC
 - CI/CD Tests
