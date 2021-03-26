@@ -102,8 +102,12 @@ object Compute {
 
                         val maybeNetwork = instance.vpcAccessConnector?.let { vpcAccessConnector ->
                             // todo: terrible parsing
-                            val parts = vpcAccessConnector.split('/')
-                            networkVpcAccessConnector(parts[1], parts[3], parts[5])
+                            if (vpcAccessConnector.contains("/")) {
+                                val parts = vpcAccessConnector.split('/')
+                                networkVpcAccessConnector(parts[1], parts[3], parts[5])
+                            } else {
+                                networkVpcAccessConnector(instance.project, instance.zone.dropLast(2), vpcAccessConnector, maybeServiceAccount)
+                            }
                         }?.getOrNull()
 
                         val cmd1 = if (instance.containerEntrypoint != null) baseCmd + "--container-command=${instance.containerEntrypoint}" else baseCmd
