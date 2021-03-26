@@ -5,9 +5,34 @@ Easily run one-off / admin tasks for Cloud Run services.
 
 # Usage
 
-Run one-off / admin processes for Cloud Run services.  Just click:  
-[![One-Off Cloud Run](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/?cloudshell_image=gcr.io/jamesward/one-off-cloud-run&shellonly=true)
+Run a one-off / admin processes for Cloud Run services in Cloud Shell.  Just click:  
+[![One-Off Cloud Run](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/?cloudshell_image=gcr.io/jamesward/one-off-cloud-run-cloudshell&shellonly=true)
 
+Run from docker (interactive):
+```
+export GOOGLE_APPLICATION_CREDENTIALS=YOUR_CREDS_FILE
+
+docker run -it \
+  -v$GOOGLE_APPLICATION_CREDENTIALS:/certs/svc_account.json \
+  -eCLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=/certs/svc_account.json \
+  gcr.io/jamesward/one-off-cloud-run
+```
+
+Run from docker (non-interactive):
+```
+export GOOGLE_APPLICATION_CREDENTIALS=YOUR_CREDS_FILE
+
+docker run --rm \
+  -v$GOOGLE_APPLICATION_CREDENTIALS:/certs/svc_account.json \
+  -eCLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=/certs/svc_account.json \
+  -ePROJECT_ID=YOUR_PROJECT_ID \
+  -eSERVICE=YOUR_SERVICE \
+  -eZONE=YOUR_ZONE \
+  -eMACHINE_TYPE=YOUR_MACHINE_TYPE \
+  -eENTRYPOINT=YOUR_OPTIONAL_ENTRYPOINT \
+  -eARGS=YOUR_OPTIONAL_ARGS \
+  gcr.io/jamesward/one-off-cloud-run
+```
 
 ## Dev Info
 

@@ -54,3 +54,5 @@ tasks.withType<Test> {
         events(TestLogEvent.STARTED, TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
     }
 }
+
+tasks.replace("assemble").dependsOn("installDist")
