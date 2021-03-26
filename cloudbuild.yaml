@@ -9,7 +9,7 @@ steps:
   - name: 'gcr.io/cloudshell-images/custom-image-validation'
     args: ['image_test.py', '--image', 'gcr.io/$PROJECT_ID/one-off-cloud-run-cloudshell']
 
-images: ['gcr.io/$PROJECT_ID/one-off-cloud-run', 'gcr.io/$PROJECT_ID/one-off-cloud-run-cloudshell']
+images: ['gcr.io/$PROJECT_ID/one-off-cloud-run-cloudshell']
 timeout: '3600s'
 options:
   machineType: 'N1_HIGHCPU_8'
